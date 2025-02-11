@@ -3,8 +3,10 @@ package config
 import (
 	"fmt"
 
-	"github.com/rs/zerolog/log"
+	"wereserve/database"
+	"wereserve/database/seeds"
 
+	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -39,6 +41,12 @@ func (cfg Config) ConnectDB() (*DB, error ) {
 
 	sqlDB.SetMaxOpenConns(int(cfg.Psql.DBMaxOpen))
 	sqlDB.SetMaxIdleConns(int(cfg.Psql.DBMaxIdle))
+
+	//migrate database
+	database.DBMigrate(sqlDB)
+
+	//Seeding Admin
+	seeds.SeedAdmin(db)
 
 	return &DB{DB: db}, nil
 }

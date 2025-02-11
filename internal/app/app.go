@@ -13,5 +13,7 @@ func RunServer() {
 	if err != nil {
 		log.Fatal().Msgf("Error Connection to database: %v", err)
 	}
+	
+
 
 }
