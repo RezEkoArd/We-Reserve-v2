@@ -10,12 +10,12 @@ import (
 )
 
 type DB struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 func (cfg Config) ConnectDB() (*DB, error ) {
 	// host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=disable
-	dsn := fmt.Sprinf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 	cfg.Psql.Host,
 	cfg.Psql.User,
 	cfg.Psql.Password,
@@ -40,5 +40,5 @@ func (cfg Config) ConnectDB() (*DB, error ) {
 	sqlDB.SetMaxOpenConns(int(cfg.Psql.DBMaxOpen))
 	sqlDB.SetMaxIdleConns(int(cfg.Psql.DBMaxIdle))
 
-	return &DB{db: db}, nil
+	return &DB{DB: db}, nil
 }
