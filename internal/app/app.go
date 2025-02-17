@@ -40,14 +40,11 @@ func RunServer() {
 	api.Use(middleware.JWTAuthMiddleware()) // gunakan middleware jwt
 	{
 		// Contoh menggunakan jwt admin 
-		api.DELETE("/users/:id", middleware.AdminOnlyMiddleware(), userHandler.DeleteUser)
-		api.GET("/users", middleware.AdminOnlyMiddleware(), userHandler.GetAllUser)
-		api.GET("/users/:id", middleware.AdminOnlyMiddleware(), userHandler.GetUserById)
-		api.PUT("/users/:id", middleware.AdminOnlyMiddleware(), userHandler.UpdateUser)
+		api.DELETE("/users/:id", middleware.RoleCheck("admin"), userHandler.DeleteUser)
+		api.GET("/users", middleware.RoleCheck("customer","admin"), userHandler.GetAllUser)
+		api.GET("/users/:id", middleware.RoleCheck("customer","admin"), userHandler.GetUserById)
+		api.PUT("/users/:id", middleware.RoleCheck("customer","admin"), userHandler.UpdateUser)
 	}
-
-	
-
 
 
 	r.Run(":8080")

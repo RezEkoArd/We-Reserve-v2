@@ -128,8 +128,21 @@ func (s *UserService) UpdateUser(id int, user models.User)  error {
 	if user.Name == "" && user.Email == "" && user.Password == "" {
 		return errors.New("minimal satu field harus diisi")
 	}
+
+	//Hashing password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password),10)
+		if err != nil {
+			return err
+		}
+	user.Password = string(hashedPassword)
 	
-	err := s.userRepo.UpdateUser(id, &user)
+	
+	err = s.userRepo.UpdateUser(id, &models.User{
+		Name:      user.Name,
+		Email:     user.Email,
+		Password:  string(hashedPassword),
+	})
+
 	if err != nil {
 		return err
 	}

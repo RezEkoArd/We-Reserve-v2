@@ -82,31 +82,26 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 
 // Middleware untuk memeriksa role pengguna 
 
-func RoleCheck(allowedRoles ...string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// ambil role dari context
+func RoleCheck(allowRoles ...string) gin.HandlerFunc {
+	return func (c *gin.Context)  {
+		// Ambil role dari context
 		role, exist := c.Get("role")
 		if !exist {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error" : "Role tidak ditemukan",
-			})
+			c.JSON(http.StatusUnauthorized, gin.H{"error" : "Role tidak ditemukan"})
 			c.Abort()
 			return
 		}
 
-		// Periksa apakah role pengguna termaksud dalam allow Roles
 		roleString, ok := role.(string)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error" : "Role tidak valid",
-			})
+			c.JSON(http.StatusUnauthorized, gin.H{"error" : "Role tidak Valid"})
 			c.Abort()
 			return
 		}
 
-		// Cek apakah role pengguna diizinkan
-		allowed := false
-		for _, allowedRole := range allowedRoles {
+		// Cek role apakah di perbolehkan
+		allowed :=  false 
+		for _, allowedRole := range allowRoles {
 			if roleString == allowedRole {
 				allowed = true
 				break
@@ -114,14 +109,12 @@ func RoleCheck(allowedRoles ...string) gin.HandlerFunc {
 		}
 
 		if !allowed {
-			c.JSON(http.StatusForbidden, gin.H{
-				"error" : "Anda tidak memiliki akses",
-			})
+			c.JSON(http.StatusForbidden, gin.H{"error" : "Anda tidak memiliki akses"})
 			c.Abort()
 			return
 		}
 
-		c.Next()
+		
 	}
 }
 

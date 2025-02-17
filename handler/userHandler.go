@@ -114,7 +114,24 @@ func (h *UserHandler) GetAllUser(c *gin.Context) {
 			return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data" : users})
+	// Convert ke response list
+	var userResponses []response.ListUserResponse
+	for _, user := range users{
+		userResponses = append(userResponses, response.ListUserResponse{
+			ID:        int64(user.ID),
+			Name:      user.Name,
+			Email:     user.Email,
+			Role:      user.Role,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": userResponses,
+	})
+
+
 }
 
 func (h *UserHandler) GetUserById(c *gin.Context) {
@@ -186,6 +203,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error" : err.Error()})
 		return
 	}
+
+	
 
 	//response with success
 	c.JSON(http.StatusOK, gin.H{"message" : "User Update Successfully"})
