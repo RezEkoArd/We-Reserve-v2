@@ -124,3 +124,19 @@ func RoleCheck(allowedRoles ...string) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func AdminOnlyMiddleware() gin.HandlerFunc{
+	return func(c *gin.Context) {
+		//Ambil Role 
+		role, exists := c.Get("role")
+		if !exists || role != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error" : "only admin can access",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}

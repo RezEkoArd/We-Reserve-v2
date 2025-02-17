@@ -1,7 +1,6 @@
 package app
 
 import (
-	"net/http"
 	"wereserve/config"
 	"wereserve/handler"
 	"wereserve/middleware"
@@ -35,28 +34,20 @@ func RunServer() {
 		public.POST("/register", userHandler.Register)
 		public.POST("/login", userHandler.Login)
 	}
-
-	// Protect routes (dengan menggunakan middleware JWT)
-	// api := r.Group("/api")
-	// api.Use(middleware.JWTAuthMiddleware())
-	// {
-	// 	api.GET("/profile", func ()  {
-			
-	// 	})
-	// }
-
-
-
+	
 	//Endpoint yang memerlukan authentication dan role tertentu
 	api := r.Group("/api")
 	api.Use(middleware.JWTAuthMiddleware()) // gunakan middleware jwt
+	{
+		// Contoh menggunakan jwt admin 
+		api.DELETE("/users/:id", middleware.AdminOnlyMiddleware(), userHandler.DeleteUser)
+		api.GET("/users", middleware.AdminOnlyMiddleware(), userHandler.GetAllUser)
+		api.GET("/users/:id", middleware.AdminOnlyMiddleware(), userHandler.GetUserById)
+		api.PUT("/users/:id", middleware.AdminOnlyMiddleware(), userHandler.UpdateUser)
+	}
 
-	// Contoh menggunakan jwt admin 
-	api.GET("/admin", middleware.RoleCheck("admin"), func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Halo Admin!",
-		})
-	})
+	
+
 
 
 	r.Run(":8080")

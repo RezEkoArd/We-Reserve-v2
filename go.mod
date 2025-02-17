@@ -3,7 +3,7 @@ module wereserve
 go 1.23.4
 
 require (
-	github.com/go-playground/validator/v10 v10.24.0
+	github.com/go-playground/validator/v10 v10.25.0
 	github.com/rs/zerolog v1.33.0
 	github.com/rubenv/sql-migrate v1.7.1
 	github.com/spf13/viper v1.19.0

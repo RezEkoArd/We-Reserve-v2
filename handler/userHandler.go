@@ -2,7 +2,9 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 	"wereserve/dto"
+	response "wereserve/handler/response"
 	"wereserve/models"
 	"wereserve/services"
 
@@ -85,4 +87,107 @@ func (h *UserHandler) Login(c *gin.Context) {
 	c.SetCookie("Authorization", token, 3600*24*3, "","", false, true)
 
 	c.JSON(http.StatusOK, gin.H{"token" : token})
+}
+
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	// get id from Params
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error" : "id tidak ditemukan" })
+	}
+
+	// Panggil service untuk menghapus user
+	err = h.UserService.DeleteUser(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+}
+
+func (h *UserHandler) GetAllUser(c *gin.Context) {
+	users, err := h.UserService.GetAllUser()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error" : err.Error()})
+			return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data" : users})
+}
+
+func (h *UserHandler) GetUserById(c *gin.Context) {
+	// get id param
+	ParamId := c.Param("id")
+	id, err := strconv.Atoi(ParamId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error" : "Id tidak di temukan"})
+		return
+	}
+
+	// panggil service
+	user, err := h.UserService.GetUserById(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error" : "Data not Found"})
+		return
+	}
+
+	resp := response.UserResponse{
+		ID:       user.ID,
+		Name:     user.Name,
+		Email:    user.Email,
+		Role:     user.Role,
+	}
+
+	// jika data ditemukan
+	c.JSON(http.StatusOK, gin.H{
+		"message" : "data get successfully",
+		"data" : resp,
+	})
+}
+
+// Update User
+func (h *UserHandler) UpdateUser(c *gin.Context) {
+	// Parse Id from url
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error" : "Id tidak di temukan"})
+		return
+	}
+
+	//bind json body
+	var user dto.UpdateUserRequest
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error" : "Invalid request body"})
+		return
+	}
+
+	if err := dto.Validate.Struct(user); err != nil {
+		errors := make(map[string]string)
+		for _, err := range err.(validator.ValidationErrors) {
+			errors[err.Field()] = err.Tag()
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error" : "Validator failed", "details" : errors})
+		return
+	}
+
+	// Convert Dto to model
+	reqBody := models.User{
+		Name:      user.Name,
+		Email:     user.Email,
+		Password: user.Password,
+	}
+
+	// panggil service
+	err = h.UserService.UpdateUser(id, reqBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error" : err.Error()})
+		return
+	}
+
+	//response with success
+	c.JSON(http.StatusOK, gin.H{"message" : "User Update Successfully"})
+
 }

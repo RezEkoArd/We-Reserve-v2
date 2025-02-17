@@ -80,3 +80,59 @@ func (s *UserService) LoginUser(email, password string) (string, error) {
 
 	return token, nil
 }
+
+
+// CRUD USER MANAGEMENT
+
+func (s *UserService) DeleteUser(id int) error {
+	// Cek User Exist
+	_, err := s.userRepo.GetUserByid(id)
+	if err != nil {
+		return errors.New("user not Found")
+	}
+
+	// Delete
+	err = s.userRepo.DeleteUser(id)
+	if err != nil{
+		return err
+	}
+
+	return nil
+}
+
+// Get All user 
+func (s *UserService) GetAllUser() ([]models.User, error) {
+	users, err := s.userRepo.GetAllUser()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// Get UserById
+func (s *UserService) GetUserById(id int) (*models.User, error) {
+
+	user, err := s.userRepo.GetUserByid(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// Update User
+
+func (s *UserService) UpdateUser(id int, user models.User)  error {
+	// Validasi min satu field yang disi
+	if user.Name == "" && user.Email == "" && user.Password == "" {
+		return errors.New("minimal satu field harus diisi")
+	}
+	
+	err := s.userRepo.UpdateUser(id, &user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
