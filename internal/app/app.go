@@ -19,10 +19,16 @@ func RunServer() {
 		log.Fatal().Msgf("Error Connection to database: %v", err)
 	}
 
-	// inisialisasi handler routes dan service
+	// inisialisasi handler routes dan service user
 	userRepo := repository.NewUserRepository(db.DB)
 	userService := services.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
+
+
+	// initilitaions Table 
+	tableRepo := repository.NewTableRepository(db.DB)
+	tableService := services.NewTableService(tableRepo)
+	tableHandler := handler.NewTableHandler(tableService)
 
 
 	// Setup gin router
@@ -44,6 +50,13 @@ func RunServer() {
 		api.GET("/users", middleware.RoleCheck("customer","admin"), userHandler.GetAllUser)
 		api.GET("/users/:id", middleware.RoleCheck("customer","admin"), userHandler.GetUserById)
 		api.PUT("/users/:id", middleware.RoleCheck("customer","admin"), userHandler.UpdateUser)
+
+		api.GET("/tables", middleware.RoleCheck("customer", "admin"), tableHandler.GetListTable)
+		api.GET("/tables:id", middleware.RoleCheck("customer", "admin"),tableHandler.GetTableByID)
+		api.GET("/tables/status", middleware.RoleCheck("customer", "admin"),tableHandler.GetTableByStatus)
+		api.POST("/tables", middleware.RoleCheck("admin"),tableHandler.CreateTable)
+		api.PUT("/tables:id", middleware.RoleCheck("admin"),tableHandler.UpdateTable)
+		api.DELETE("/tables:id", middleware.RoleCheck("admin"),tableHandler.DeleteTable)
 	}
 
 

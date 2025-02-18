@@ -203,9 +203,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error" : err.Error()})
 		return
 	}
-
 	
-
 	//response with success
 	c.JSON(http.StatusOK, gin.H{"message" : "User Update Successfully"})
 

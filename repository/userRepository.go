@@ -107,7 +107,7 @@ func (r *UserRepository) CreateUser(user *models.User) error {
 
 
 // Update User
-func (r *UserRepository) UpdateUser (id int, user *models.User) error {
+func (r *UserRepository) UpdateUser(id int, user *models.User) error {
 	var currentUser models.User
 	err := r.DB.First(&currentUser, id).Error
 	if err != nil {

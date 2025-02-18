@@ -21,6 +21,20 @@ type UpdateUserRequest struct {
 }
 
 
+// Table Validator
+
+type CreateTableRequest struct {
+	TableName string `json:"table_name" validate:"required,min=3,max=50"`
+	Capacity  int    `json:"capacity" validate:"required,min=1,max=20"`
+	Status    string `json:"status" validate:"required,oneof=available reserved occupied"`
+}
+
+type UpdateTableRequest struct {
+	TableName string `json:"table_name" validate:"omitempty,min=3,max=50"`
+	Capacity  int    `json:"capacity" validate:"omitempty,min=1,max=20"`
+	Status    string `json:"status" validate:"omitempty,oneof=available reserved occupied"`
+}
+
 // Validator Instance
 var Validate *validator.Validate
 
