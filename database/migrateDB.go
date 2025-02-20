@@ -19,12 +19,23 @@ func DBMigrate(dbParam *sql.DB){
 		Root: "sql_migrations",
 	}
 
+
+	// Cara migrate Up
 	n, errs := migrate.Exec(dbParam, "postgres", migrations, migrate.Up)
 	if errs != nil {
 		panic(errs)
 	}
 
-	DbConnection = dbParam
+
+	// Cara migrate Down
+	// n, errs := migrate.Exec(dbParam, "postgres", migrations, migrate.Up)
+	// if errs != nil {
+	// 	panic(errs)
+	// }
+
+	// fmt.Println("Migration Down, applied", n ,"migrations")
+
+	DbConnection = dbParam	
 
 	fmt.Println("Migration Success, applied", n , "migrations")
 }

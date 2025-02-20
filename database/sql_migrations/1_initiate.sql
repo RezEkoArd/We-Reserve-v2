@@ -7,7 +7,7 @@ DROP TYPE IF EXISTS user_role, table_status;
 
 -- Create Table 
 CREATE TYPE user_role AS ENUM ('admin', 'customer');
-CREATE TYPE table_status AS ENUM ('booked', 'available');
+CREATE TYPE table_status AS ENUM ('occupied', 'available', 'reserved');
 
 
 CREATE TABLE IF NOT EXISTS users (
@@ -45,5 +45,26 @@ CREATE TABLE IF NOT EXISTS reservations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- +migrate StatementEnd
+
+-- +migrate Down
+-- +migrate StatementBegin
+
+-- Hapus Table reservation terlebih dahulu karena dia memmiliki foreign key ke user dan table
+DROP TABLE IF EXISTS reservations;
+
+-- Hapus table tables
+DROP TABLE IF EXISTS tables;
+
+
+-- Hapus table users
+DROP TABLE IF EXISTS users;
+
+-- drop tipe enum table-status
+DROP TYPE IF EXISTS table_status;
+
+-- hapus tipe enum user
+DROP TYPE IF EXISTS user_role;
 
 -- +migrate StatementEnd

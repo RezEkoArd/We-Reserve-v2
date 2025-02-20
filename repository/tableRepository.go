@@ -21,7 +21,7 @@ func NewTableRepository(db *gorm.DB) *TableRepository {
 
 func (r *TableRepository) IsTableExists(tableName string) (bool, error) {
 	var tableExists bool
-	err := r.DB.Raw("SELECT EXIST(SELECT 1 FROM tables WHERE table_name = ?)",tableName).Scan(&tableExists).Error
+	err := r.DB.Raw("SELECT EXISTS(SELECT 1 FROM tables WHERE table_name = ?)",tableName).Scan(&tableExists).Error
 	if err != nil {
 		return false, err
 	}

@@ -57,6 +57,8 @@ func (s *TableService) CreateTable(table *models.Table) error {
 		return err
 	}
 
+	//! Tambahin default Status untuk table menjadi vuluarble
+
 	return nil
 }
 
@@ -69,7 +71,7 @@ func (s *TableService) DeleteTable(id int) error {
 	}
 
 	//Delete
-	err = s.DeleteTable(id)
+	err = s.tableRepo.DeleteTable(id)
 	if err != nil {
 		return err
 	}

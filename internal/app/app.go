@@ -52,13 +52,12 @@ func RunServer() {
 		api.PUT("/users/:id", middleware.RoleCheck("customer","admin"), userHandler.UpdateUser)
 
 		api.GET("/tables", middleware.RoleCheck("customer", "admin"), tableHandler.GetListTable)
-		api.GET("/tables:id", middleware.RoleCheck("customer", "admin"),tableHandler.GetTableByID)
+		api.GET("/tables/:id", middleware.RoleCheck("customer", "admin"),tableHandler.GetTableByID)
 		api.GET("/tables/status", middleware.RoleCheck("customer", "admin"),tableHandler.GetTableByStatus)
 		api.POST("/tables", middleware.RoleCheck("admin"),tableHandler.CreateTable)
-		api.PUT("/tables:id", middleware.RoleCheck("admin"),tableHandler.UpdateTable)
-		api.DELETE("/tables:id", middleware.RoleCheck("admin"),tableHandler.DeleteTable)
+		api.PUT("/tables/:id", middleware.RoleCheck("admin"),tableHandler.UpdateTable)
+		api.DELETE("/tables/:id", middleware.RoleCheck("admin"),tableHandler.DeleteTable)
 	}
-
 
 	r.Run(":8080")
 
