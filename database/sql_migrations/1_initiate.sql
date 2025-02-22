@@ -41,10 +41,14 @@ CREATE TABLE IF NOT EXISTS reservations (
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
     table_id INT REFERENCES tables(id) ON DELETE CASCADE,
     number_of_people INT NOT NULL,
-    date_reservation TIMESTAMP NOT NULL,
+    date DATE NOT NULL,
+    time TIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_reservation_date ON reservations(date);
+CREATE INDEX idx_reservation_time ON reservations(time);
 
 -- +migrate StatementEnd
 
@@ -58,13 +62,13 @@ DROP TABLE IF EXISTS reservations;
 DROP TABLE IF EXISTS tables;
 
 
--- Hapus table users
+-- -- Hapus table users
 DROP TABLE IF EXISTS users;
 
--- drop tipe enum table-status
+-- -- drop tipe enum table-status
 DROP TYPE IF EXISTS table_status;
 
--- hapus tipe enum user
+-- -- hapus tipe enum user
 DROP TYPE IF EXISTS user_role;
 
 -- +migrate StatementEnd

@@ -28,7 +28,7 @@ func DBMigrate(dbParam *sql.DB){
 
 
 	// Cara migrate Down
-	// n, errs := migrate.Exec(dbParam, "postgres", migrations, migrate.Up)
+	// n, errs := migrate.Exec(dbParam, "postgres", migrations, migrate.Down)
 	// if errs != nil {
 	// 	panic(errs)
 	// }

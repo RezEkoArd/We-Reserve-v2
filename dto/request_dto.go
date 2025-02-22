@@ -1,6 +1,10 @@
 package dto
 
-import "github.com/go-playground/validator/v10"
+import (
+	"time"
+
+	"github.com/go-playground/validator/v10"
+)
 
 type RegisterRequest struct {
 	Name string `json:"name" validate:"required,min=3,max=20"`
@@ -33,6 +37,23 @@ type UpdateTableRequest struct {
 	TableName string `json:"table_name" validate:"omitempty,min=3,max=50"`
 	Capacity  int    `json:"capacity" validate:"omitempty,min=1,max=20"`
 	Status    string `json:"status" validate:"omitempty,oneof=available reserved occupied"`
+}
+
+
+// Reservation Validator
+type UpdateReservationRequest struct {
+	Date *time.Time `json:"date" validate:"omitempty"`
+	Time *time.Time	`json:"time" validate:"omitempty"`
+	NumberOfPeople *int	`json:"number_of_people" validate:"omitempty,min=1"`
+}
+
+
+type CreateReservationRequest struct {
+	UserID int	`json:"user_id" validate:"required"`
+	TableID	int	`json:"table_id" validate:"required"`
+	Date	string `json:"date" validate:"required"`
+	Time	string `json:"time" validate:"required"`
+	NumberOfPeople int	`json:"number_of_people" validate:"required,min=1"`
 }
 
 // Validator Instance

@@ -178,7 +178,7 @@ func (h *TableHandler) DeleteTable(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error" : err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message" : "User deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message" : "Table deleted successfully"})
 }
 
 func (h *TableHandler) GetTableByStatus(c *gin.Context) {
