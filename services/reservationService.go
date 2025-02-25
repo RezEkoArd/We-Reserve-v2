@@ -16,8 +16,12 @@ type ReservationService struct {
 	tableRepo *repository.TableRepository
 }
 
-func NewReservationService(reservationRepo *repository.ReservationRepository) *ReservationService {
-	return &ReservationService{reservationRepo:  reservationRepo}
+func NewReservationService(reservationRepo *repository.ReservationRepository, tableRepo *repository.TableRepository) *ReservationService {
+	return &ReservationService{
+		reservationRepo: reservationRepo,
+		tableRepo: tableRepo,
+        Validator:       validator.New(),
+	}
 }
 
 
@@ -26,6 +30,11 @@ func (s *ReservationService) GetAllReservation() ([]models.Reservation, error) {
 	reservations, err := s.reservationRepo.GetAllReservation()
 	if err != nil {
 		return nil, err
+	}
+
+	// Cek apakah reservation kosong
+	if len(reservations) == 0 {
+		return nil, errors.New("no reservations found")
 	}
 
 	return reservations, nil
@@ -55,32 +64,31 @@ func (s *ReservationService) GetReservationByUserLogin(userID int) ([]models.Res
 
 func (s *ReservationService) CreateReservation(reservation *models.Reservation) error {
 	
-	// Cek Reservation 
-	// _, err := s.reservationRepo.IsReservationExists(reservation.TableID, reservation.ReservationDateTime)
-	// if err != nil {
-	// 	return fmt.Errorf("reservasi sudah dibuat: %w" , err)
-	// }
+// Validasi input menggunakan Validator
+	if err := s.Validator.Struct(reservation); err != nil {
+		return fmt.Errorf("invalid reservation data: %w", err)
+	}
 
+	// Cek apakah meja tersedia
 	table, err := s.tableRepo.GetTableByID(reservation.TableID)
 	if err != nil {
-		return fmt.Errorf("gagal mengambil data meja: %w", err)
+		return fmt.Errorf("failed to fetch table with ID %d: %w", reservation.TableID, err)
 	}
-
 	if table.Status == "reserved" {
-		return errors.New("meja sudah di pesan")
+		return fmt.Errorf("table with ID %d is already reserved", reservation.TableID)
 	}
 
-	// buat reservasi
-	err = s.reservationRepo.CreateReservation(reservation) 
-	if err != nil {
-		return fmt.Errorf("gagal membuat reservasi: %w", err)
+	// Buat reservasi
+	if err := s.reservationRepo.CreateReservation(reservation); err != nil {
+		return fmt.Errorf("failed to create reservation for table ID %d: %w", reservation.TableID, err)
 	}
 
+	// Update status meja menjadi "reserved"
 	table.Status = "reserved"
-	err = s.tableRepo.UpdateTable(reservation.TableID, table)
-	if err != nil {
-		return fmt.Errorf("gagal mengupdate status meja: %w", err)
+	if err := s.tableRepo.UpdateTable(reservation.TableID, table); err != nil {
+		return fmt.Errorf("failed to update status for table ID %d: %w", reservation.TableID, err)
 	}
+	
 
 	return nil
 }
@@ -101,33 +109,35 @@ func (s *ReservationService) DeleteReservation(id int) error {
 }
 
 // update 
-func (s *ReservationService) UpdateReservation(id int, reservation models.Reservation) error {
-	if reservation.TableID == 0 && reservation.UserID == 0 && reservation.ReservationDateTime.IsZero() && reservation.NumberOfPeople == 0 {
-		return errors.New("minimal 1 field harus di isi")
-	 }	
-	
-	// validasi reservasi yang akan diupdate ada
-	 currentReservation, err := s.reservationRepo.GetReservationDetail(id)
-	 if err != nil {
-		return fmt.Errorf("gagal mengambil reservasi; %w", err)
-	 }
+func (s *ReservationService) UpdateReservation(id int, updatedReservation models.Reservation) error {
+	// Ambil reservasi saat ini
+	currentReservation, err := s.reservationRepo.GetReservationDetail(id)
+	if err != nil {
+		return fmt.Errorf("failed to fetch reservation with ID %d: %w", id, err)
+	}
 
-	 if reservation.TableID != currentReservation.TableID || !reservation.ReservationDateTime.Equal(currentReservation.ReservationDateTime) {
-		exists, err := s.reservationRepo.IsReservationExists(reservation.TableID, reservation.ReservationDateTime)
+	// Periksa apakah ada perubahan
+	if updatedReservation.TableID == 0 && updatedReservation.UserID == 0 &&
+		updatedReservation.ReservationDateTime.IsZero() && updatedReservation.NumberOfPeople == 0 {
+		return errors.New("at least one field must be updated")
+	}
+
+	// Periksa konflik reservasi
+	if updatedReservation.TableID != currentReservation.TableID ||
+		!updatedReservation.ReservationDateTime.Equal(currentReservation.ReservationDateTime) {
+		exists, err := s.reservationRepo.IsReservationExists(updatedReservation.TableID, updatedReservation.ReservationDateTime)
 		if err != nil {
-			return fmt.Errorf("gagal validasi reervasi: %w", err)
+			return fmt.Errorf("failed to validate reservation: %w", err)
 		}
 		if exists {
-			return errors.New("table_id dan reservation_datetime sudah digunakan oleh reservasi lain")
+			return errors.New("reservation conflict: table and datetime already reserved")
 		}
-	 }
+	}
 
+	// Update reservasi
+	if err := s.reservationRepo.UpdateReservation(id, &updatedReservation); err != nil {
+		return fmt.Errorf("failed to update reservation with ID %d: %w", id, err)
+	}
 
-	 // update reservasi
-	 err = s.reservationRepo.UpdateReservation(id, &reservation)
-	 if err != nil {
-		return fmt.Errorf("gagal mengupdate reservasi: %w", err)
-	 }
-
-	 return nil
+ return nil
 }

@@ -38,17 +38,15 @@ func (r *TableRepository) GetAllTables() ([]models.Table, error) {
 } 
 
 func (r *TableRepository) GetTableByID(id int) (*models.Table, error) {
-	var table *models.Table
-	err := r.DB.Raw("SELECT * FROM tables WHERE id = $1", id).First(&table).Error
-
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("table with Id %d not found", id)
-		}
-		return nil, err
-	}
-
-	return table, nil 
+	var table models.Table
+    err := r.DB.First(&table, id).Error
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, fmt.Errorf("table with ID %d not found", id)
+        }
+        return nil, fmt.Errorf("failed to fetch table with ID %d: %w", id, err)
+    }
+    return &table, nil
 }
 
 func (r *TableRepository) GetTableByStatus(status string) ([]models.Table, error) {
@@ -119,7 +117,7 @@ func (r *TableRepository) UpdateTable(id int, table *models.Table) error {
 	// update filed yang diisi
 	updates := make(map[string]interface{})
 	if table.TableName != "" {
-		updates["tableName"] = table.TableName
+		updates["table_name"] = table.TableName
 	}
 
 	if table.Capacity != 0 {

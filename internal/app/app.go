@@ -31,9 +31,9 @@ func RunServer() {
 	tableHandler := handler.NewTableHandler(tableService)
 
 	// inisilisasi Reservation
-	// reservationRepo := repository.NewReservationRepository(db.DB)
-	// reservationService := services.NewReservationService(reservationRepo)
-	// reservationHander := handler.NewReservationsHandler(reservationService)
+	reservationRepo := repository.NewReservationRepository(db.DB)
+	reservationService := services.NewReservationService(reservationRepo, tableRepo)
+	reservationHandler := handler.NewReservationsHandler(reservationService)
 
 
 	// Setup gin router
@@ -63,11 +63,13 @@ func RunServer() {
 		api.PUT("/tables/:id", middleware.RoleCheck("admin"),tableHandler.UpdateTable)
 		api.DELETE("/tables/:id", middleware.RoleCheck("admin"),tableHandler.DeleteTable)
 
-
+		api.GET("/reservation", middleware.RoleCheck("admin"), reservationHandler.GetAllReservation)
+		api.GET("/reservation/:id", middleware.RoleCheck("customer", "admin"),reservationHandler.GetReservationDetail)
+		api.GET("/reservation/my-reservation", middleware.RoleCheck("customer", "admin"),reservationHandler.GetReservationByUserLogin)
+		api.POST("/reservation", middleware.RoleCheck("admin"),reservationHandler.CreateReservation)
+		api.PUT("/reservation/:id", middleware.RoleCheck("admin"),reservationHandler.UpdateReservation)
+		api.DELETE("/reservation/:id", middleware.RoleCheck("admin"),reservationHandler.DeleteReservation)
 	}
-
-	
-
 	r.Run(":8080")
 
 }

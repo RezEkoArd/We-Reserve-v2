@@ -27,10 +27,21 @@ func NewReservationsHandler(reservationService *services.ReservationService) *Re
 func (h *ReservationHandler) GetAllReservation(c *gin.Context) {
 	reservations, err := h.ReservationService.GetAllReservation()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error" : err.Error()})
-			return
-	}
+        // Tangani error khusus untuk "no reservations found"
+        if err.Error() == "no reservations found" {
+            c.JSON(http.StatusNotFound, gin.H{
+                "error": "No reservations found",
+            })
+            return
+        }
+
+        // Tangani error lainnya
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": err.Error(),
+        })
+        return
+    }
+
 
 	// Convert to ReseponseStruct
 	var allReserveResponse []response.ReservationResponse
@@ -213,7 +224,7 @@ func (h *ReservationHandler) CreateReservation(c *gin.Context) {
 
 	// Convert DTO To model
 	reservationModel := models.Reservation{
-		UserID: reservationDTO.UserID,
+		UserID: 		reservationDTO.UserID,
 		TableID:            reservationDTO.TableID,
         ReservationDateTime: reservationDTO.ReservationDateTime,
         NumberOfPeople:     reservationDTO.NumberOfPeople,
@@ -233,9 +244,38 @@ func (h *ReservationHandler) CreateReservation(c *gin.Context) {
 		return
 	}
 
+	createReservation, err := h.ReservationService.GetReservationDetail(reservationModel.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error" : "failed to create reservation"})
+		return
+	}
+
+	// format resp
+	resp := response.ReservationResponse{
+		ID:                  createReservation.ID,
+		User:                response.UserPreloadResponse{
+							ID:    createReservation.UserID,
+							Name:  createReservation.User.Name,
+							Email: createReservation.User.Email,
+		},
+		Table:               response.TableResponse{
+							ID:        createReservation.TableID,
+							TableName: createReservation.Table.TableName,
+							Capacity:  createReservation.Table.Capacity,
+							Status:    createReservation.Table.Status,
+							CreatedAt: createReservation.Table.CreatedAt,
+							UpdatedAt: createReservation.Table.UpdatedAt,
+		},
+		ReservationDateTime: createReservation.ReservationDateTime,
+		NumberOfPeople:      createReservation.NumberOfPeople,
+		CreatedAt:           createReservation.CreatedAt,
+		UpdatedAt:           createReservation.UpdatedAt,
+	}
+
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message" : "Reservation created successfully",
-		"data" : reservationModel,
+		"data" : resp,
 	})
 }
 
