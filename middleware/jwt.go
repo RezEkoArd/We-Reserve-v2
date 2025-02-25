@@ -12,10 +12,11 @@ import (
 
 var secretKey = []byte(viper.GetString("JWT_SECRET_KEY"))
 
-func GenerateJWT(email, role string) (string, error ) {
+func GenerateJWT(email, role, id string) (string, error ) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email" : email,
 		"role" : role,
+		"userID" : id,
 		"exp" : time.Now().Add(time.Hour * 3).Unix(), // expired 3 day
 	})
 
@@ -64,8 +65,9 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 
 		email, emailExist := claims["email"].(string)
 		role, roleExist := claims["role"].(string)
+		userID, userExist := claims["userID"].(string)
 
-		if !emailExist || !roleExist {
+		if !emailExist || !roleExist || !userExist{
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error" : "Token tidak mengandung informasi pengguna",
 			})
@@ -75,6 +77,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 
 		c.Set("email", email)
 		c.Set("role", role)
+		c.Set("userID", userID)
 		
 		c.Next()
 	}

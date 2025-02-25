@@ -39,21 +39,18 @@ type UpdateTableRequest struct {
 	Status    string `json:"status" validate:"omitempty,oneof=available reserved occupied"`
 }
 
-
-// Reservation Validator
-type UpdateReservationRequest struct {
-	Date *time.Time `json:"date" validate:"omitempty"`
-	Time *time.Time	`json:"time" validate:"omitempty"`
-	NumberOfPeople *int	`json:"number_of_people" validate:"omitempty,min=1"`
+type Reservation struct {
+    UserID             int       `json:"user_id" validate:"required"`
+    TableID            int       `json:"table_id" validate:"required"`
+    ReservationDateTime time.Time `json:"reservation_datetime" validate:"required"`
+    NumberOfPeople     int       `json:"number_of_people" validate:"required,min=1"`
 }
 
-
-type CreateReservationRequest struct {
-	UserID int	`json:"user_id" validate:"required"`
-	TableID	int	`json:"table_id" validate:"required"`
-	Date	string `json:"date" validate:"required"`
-	Time	string `json:"time" validate:"required"`
-	NumberOfPeople int	`json:"number_of_people" validate:"required,min=1"`
+type UpdateReservation struct {
+    TableID            int       `json:"table_id" validate:"omitempty"`
+    UserID             int       `json:"user_id" validate:"omitempty"`
+    ReservationDateTime time.Time `json:"reservation_datetime" validate:"omitempty"`
+    NumberOfPeople     int       `json:"number_of_people" validate:"omitempty,min=1"`
 }
 
 // Validator Instance

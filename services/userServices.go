@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"strconv"
 	"wereserve/middleware"
 	"wereserve/models"
 	"wereserve/repository"
@@ -72,8 +73,11 @@ func (s *UserService) LoginUser(email, password string) (string, error) {
 		return "", errors.New("invalid password")
 	}
 
+	// parse id int to string
+	strID := strconv.Itoa(user.ID)
+
 	// Generate JWT token
-	token, err := middleware.GenerateJWT(user.Email, user.Role)
+	token, err := middleware.GenerateJWT(user.Email, user.Role, strID)
 	if err != nil {
 		return "", err
 	}

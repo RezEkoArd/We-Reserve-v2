@@ -3,8 +3,10 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"time"
 	"wereserve/dto"
 	"wereserve/handler/response"
+	"wereserve/models"
 	"wereserve/services"
 
 	"github.com/gin-gonic/gin"
@@ -13,131 +15,86 @@ import (
 
 type ReservationHandler struct {
 	ReservationService *services.ReservationService
+	validate           *validator.Validate
 }
 
 func NewReservationsHandler(reservationService *services.ReservationService) *ReservationHandler {
-	return &ReservationHandler{ReservationService: reservationService}
+	return &ReservationHandler{ReservationService: reservationService,
+		validate:           validator.New(),
+	}
 }
 
-
-func (h *ReservationHandler) GetListReservation(c *gin.Context) {
-	// fetchAll reservation from the service
+func (h *ReservationHandler) GetAllReservation(c *gin.Context) {
 	reservations, err := h.ReservationService.GetAllReservation()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error" : err.Error()})
-		return
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error" : err.Error()})
+			return
 	}
 
-	//Convert reservation to response format
-	var reservationResp []response.ReservationResponse
-	for _,resp := range reservations {
-		reservationResp = append(reservationResp, response.ReservationResponse{
-			ID:             resp.ID,
-			User:           response.UserPreloadResponse{
-				ID:        resp.User.ID,
-				Name:      resp.User.Name,
-				Email:     resp.User.Email,
+	// Convert to ReseponseStruct
+	var allReserveResponse []response.ReservationResponse
+	for _, reservation := range reservations{
+		allReserveResponse = append(allReserveResponse, response.ReservationResponse{
+			ID:                  reservation.ID,
+			User:                response.UserPreloadResponse{
+				ID:    reservation.User.ID,
+				Name:  reservation.User.Name,
+				Email: reservation.User.Email,
 			},
-			Table:          response.TableResponse{
-				ID:        resp.Table.ID,
-				TableName: resp.Table.TableName,
-				Capacity:  resp.Table.Capacity,
-				Status:    resp.Table.Status,
+			Table:               response.TableResponse{
+				ID:        reservation.Table.ID,
+				TableName: reservation.Table.TableName,
+				Capacity:  reservation.Table.Capacity,
+				Status:    reservation.Table.Status,
 			},
-			Date:           resp.Date,
-			Time:           resp.Time,
-			NumberOfPeople: resp.NumberOfPeople,
-			CreatedAt:      resp.CreatedAt,
-			UpdatedAt:      resp.UpdatedAt,
+			ReservationDateTime: reservation.ReservationDateTime,
+			NumberOfPeople:      reservation.NumberOfPeople,
+			CreatedAt:           reservation.CreatedAt,
+			UpdatedAt:           reservation.UpdatedAt,
 		})
 	}
 
-	// return response
-	c.JSON(http.StatusOK, reservationResp)
+	c.JSON(http.StatusOK, gin.H{
+		"message" : "successfully get all Reservation",
+		"data" : allReserveResponse,
+	})
 }
 
-func (h *ReservationHandler) GetReservationByUser(c *gin.Context) {
-	// get userID
-	userEmail, exists := c.Get("email")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error" : "User not authenticate"})
-		return
-	}
-	
-	//pastikan email itu string
-	userEmailStr, ok := userEmail.(string)
-	if !ok {
-		c.JSON(http.StatusBadRequest,gin.H{"error" : "Invalid email user"})
-	}
-
-	// panggil service 
-	reservation, err  := h.ReservationService.GetReservationByUsers(userEmailStr)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error" : err.Error()})
-		return
-	}
-
-	// Konversi ke response format
-    var reservationResp []response.ReservationResponse
-    for _, resp := range reservation {
-        reservationResp = append(reservationResp, response.ReservationResponse{
-            ID:             resp.ID,
-            User: response.UserPreloadResponse{
-                ID:    resp.User.ID,
-                Name:  resp.User.Name,
-                Email: resp.User.Email,
-            },
-			Table: response.TableResponse{
-				ID:        resp.Table.ID,
-				TableName: resp.Table.TableName,
-				Capacity:  resp.Table.Capacity,
-				Status:    resp.Table.Status,
-			},
-            Date:           resp.Date,
-            Time:           resp.Time,
-            NumberOfPeople: resp.NumberOfPeople,
-            CreatedAt:      resp.CreatedAt,
-            UpdatedAt:      resp.UpdatedAt,
-        })
-    }
-
-    // Return the response
-    c.JSON(http.StatusOK, reservationResp)
-}
-
-func (h *ReservationHandler) GetReservationById(c *gin.Context) {
-	// get id
+func (h *ReservationHandler) GetReservationDetail(c *gin.Context) {
+	// get Param
 	ParamId := c.Param("id")
 	id, err := strconv.Atoi(ParamId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error" : "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error" : "id tidak ditemukan"})
+		return
 	}
 
 	// panggil service
 	reservation, err := h.ReservationService.GetReservationDetail(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error" : "Data Not Found"})
+		c.JSON(http.StatusNotFound, gin.H{"error" : "Data tidak di temukan"})
 		return
 	}
 
+	// convert to struct respons
 	resp := response.ReservationResponse{
-		ID:             reservation.ID,
-		User:           response.UserPreloadResponse{
-			ID:        reservation.User.ID,
-			Name:      reservation.User.Name,
-			Email:     reservation.User.Email,
-		},
-		Table:          response.TableResponse{
-			ID:        reservation.Table.ID,
-			TableName: reservation.Table.TableName,
-			Capacity:  reservation.Table.Capacity,
-			Status:    reservation.Table.Status,
-		},
-		Date:           reservation.Date,
-		Time:           reservation.Time,
-		NumberOfPeople: reservation.NumberOfPeople,
-		CreatedAt:      reservation.CreatedAt,
-		UpdatedAt:      reservation.UpdatedAt,
+			ID:        reservation.ID,
+			User:      response.UserPreloadResponse{
+				ID:    reservation.User.ID,
+				Name:  reservation.User.Name,
+				Email: reservation.User.Email,
+			},
+			Table:         response.TableResponse{
+				ID:        reservation.Table.ID,
+				TableName: reservation.Table.TableName,
+				Capacity:  reservation.Table.Capacity,
+				Status:    reservation.Table.Status,
+			},
+			ReservationDateTime: reservation.ReservationDateTime,
+			NumberOfPeople:      reservation.NumberOfPeople,
+			CreatedAt:           reservation.CreatedAt,
+			UpdatedAt:           reservation.UpdatedAt,
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -146,86 +103,185 @@ func (h *ReservationHandler) GetReservationById(c *gin.Context) {
 	})
 }
 
+func (h *ReservationHandler) GetReservationByUserLogin(c *gin.Context) {
+	// Get id user login now
+	userIDInterface, exists :=  c.Get("userID")	
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error" : "User Id tidak di temukan di context",
+		})
+		return
+	}
+
+	// Lakukan type assertion untuk mengkonversi ke string
+	userID, ok := userIDInterface.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error" : "Gagal konversi userID ke string",
+		})
+		return
+	}
+
+	// convert to int
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error" : "userID tidak valid",
+		})
+		return
+	}
+
+	reservations, err := h.ReservationService.GetReservationByUserLogin(id)
+	if err != nil{
+		c.JSON(http.StatusBadRequest, gin.H {
+			"error" : "Gagal mengambil data reservasi",
+		})
+		return
+	}
+
+	var allReserveResponse []response.ReservationResponse
+	for _, reservation := range reservations{
+		allReserveResponse = append(allReserveResponse, response.ReservationResponse{
+			ID:                  reservation.ID,
+			User:                response.UserPreloadResponse{
+				ID:    reservation.User.ID,
+				Name:  reservation.User.Name,
+				Email: reservation.User.Email,
+			},
+			Table:               response.TableResponse{
+				ID:        reservation.Table.ID,
+				TableName: reservation.Table.TableName,
+				Capacity:  reservation.Table.Capacity,
+				Status:    reservation.Table.Status,
+			},
+			ReservationDateTime: reservation.ReservationDateTime,
+			NumberOfPeople:      reservation.NumberOfPeople,
+			CreatedAt:           reservation.CreatedAt,
+			UpdatedAt:           reservation.UpdatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message" : "data get successfully",
+		"data" : allReserveResponse,
+	})
+}
+
+
+
+// Delete Reservation
 func (h *ReservationHandler) DeleteReservation(c *gin.Context) {
 	paramID := c.Param("id")
 	id, err := strconv.Atoi(paramID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error" : "Invalid Id Reservation"})
+		c.JSON(http.StatusBadRequest,gin.H{"error" : "Id invalid"})
+		return
 	}
 
-	// service panggil
 	err = h.ReservationService.DeleteReservation(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error" : err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"error" : "Reservation deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message" : "Reservation deleted Successfully" })
+}
+
+//Create 
+
+func (h *ReservationHandler) CreateReservation(c *gin.Context) {
+	// var reservation models.Reservation
+	var reservationDTO dto.Reservation
+
+	//bind dan validasi request body
+	if err := c.ShouldBindJSON(&reservationDTO); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// validasi format
+	if _, err := time.Parse(time.RFC3339, reservationDTO.ReservationDateTime.Format(time.RFC3339)); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error" : "invalid reservation date format"})
+		return
+	}
+
+	// validate request
+	if err := h.validate.Struct(reservationDTO); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error" : err.Error()})
+		return
+	}
+
+	// Convert DTO To model
+	reservationModel := models.Reservation{
+		UserID: reservationDTO.UserID,
+		TableID:            reservationDTO.TableID,
+        ReservationDateTime: reservationDTO.ReservationDateTime,
+        NumberOfPeople:     reservationDTO.NumberOfPeople,
+        CreatedAt:          time.Now(),
+        UpdatedAt:          time.Now(),
+	}
+
+	// Panggil service untuk membuat reservasi
+	if err :=  h.ReservationService.CreateReservation(&reservationModel); err != nil {
+		// handle error
+		switch err.Error() {
+		case "meja sudah di pesan" :
+			c.JSON(http.StatusBadRequest, gin.H{"error" : err.Error()})
+		default :
+			c.JSON(http.StatusInternalServerError, gin.H{"error" : "failed to create reservation"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message" : "Reservation created successfully",
+		"data" : reservationModel,
+	})
 }
 
 func (h *ReservationHandler) UpdateReservation(c *gin.Context) {
-	// Ambil ID reservasi
 	paramID := c.Param("id")
 	id, err := strconv.Atoi(paramID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error" : "reservation id tidak ditemukan"})
+		c.JSON(http.StatusBadRequest, gin.H{"error" : "invalid reservation ID"})
 		return
 	}
 
-	//bind req JSON
-	var req dto.UpdateReservationRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error" : err.Error()})
-		return
-	}
-
-
-	// Panggil service untuk update reservasi
-    if err := h.ReservationService.UpdateReservation(id, req); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// Bind and validate request body
+	var updatedDTO dto.UpdateReservation
+	if err := c.ShouldBindJSON(&updatedDTO); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
 
-    // Berikan respons sukses
-    c.JSON(http.StatusOK, gin.H{"message": "reservation updated successfully"})
-
-}
-
-func (h *ReservationHandler) CreateReservation(c *gin.Context) {
-	var req dto.CreateReservationRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
+	// Validate request body using validator
+	if err := h.validate.Struct(updatedDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error" : err.Error()})
 		return
 	}
 
-	// validation 
-	if err := dto.Validate.Struct(req); err != nil {
-		errors := make(map[string]string)
-		for _, err := range err.(validator.ValidationErrors) {
-			errors[err.Field()] = err.Tag()
+	//Convert DTO to model.Reservation
+	updateReservation := models.Reservation{
+		TableID:            updatedDTO.TableID,
+        UserID:             updatedDTO.UserID,
+        ReservationDateTime: updatedDTO.ReservationDateTime,
+        NumberOfPeople:     updatedDTO.NumberOfPeople,
+	}
+
+	//Call service to update reservation
+	if err := h.ReservationService.UpdateReservation(id, updateReservation); err != nil {
+		switch err.Error(){
+		case "minimal 1 field harus diisi":
+			c.JSON(http.StatusBadRequest, gin.H{"error" : err.Error()})
+		case "table_id dan reservation_datetime sudah digunakan oleh reservasi lain":
+            c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+        default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error" : "Failed to update reservation"})
 		}
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error" : "Validator failed", 
-			"details" : errors,
-		})
 		return
 	}
 
-	// panggil service
-	if err := h.ReservationService.CreateReservation(
-		req.UserID,
-        req.TableID,
-        req.Date,
-        req.Time,
-        req.NumberOfPeople,
-	); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error" : err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusBadRequest, gin.H{
-		"message" : "Reservation Created has been Successfully",
-		"data" : req,
+	c.JSON(http.StatusOK,gin.H{
+		"message" : "Reservation update successfuly",
 	})
 }

@@ -41,14 +41,12 @@ CREATE TABLE IF NOT EXISTS reservations (
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
     table_id INT REFERENCES tables(id) ON DELETE CASCADE,
     number_of_people INT NOT NULL,
-    date DATE NOT NULL,
-    time TIME NOT NULL,
+    reservation_datetime TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_reservation_date ON reservations(date);
-CREATE INDEX idx_reservation_time ON reservations(time);
+CREATE INDEX idx_reservation_datetime ON reservations(reservation_datetime);
 
 -- +migrate StatementEnd
 
