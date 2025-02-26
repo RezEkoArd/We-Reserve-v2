@@ -1,6 +1,8 @@
 package main
 
-import "wereserve/cmd"
+import (
+	"wereserve/cmd"
+)
 
 func main(){
 	cmd.Execute()

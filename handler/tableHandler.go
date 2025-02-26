@@ -20,6 +20,15 @@ func NewTableHandler(tableService *services.TableService) *TableHandler {
 	return &TableHandler{TableService: tableService}
 }
 
+// GetListTable godoc
+// @Summary      Get all tables
+// @Description  Retrieve a list of all tables
+// @Tags         tables
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}   response.TableResponse "List of tables retrieved successfully"
+// @Failure      500  {object}  response.ErrorResponse "Internal server error"
+// @Router       /api/tables [get]
 func (h *TableHandler) GetListTable(c *gin.Context) {
 	tables, err := h.TableService.GetAllTable()
 	if err != nil {
@@ -46,7 +55,18 @@ func (h *TableHandler) GetListTable(c *gin.Context) {
 	})
 }
 
-
+// GetTableByID godoc
+// @Summary      Get a table by ID
+// @Description  Retrieve a table's information based on its ID
+// @Tags         tables
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int                  true  "Table ID"
+// @Success      200  {object}  response.TableResponse "Table retrieved successfully"
+// @Failure      400  {object}  response.ErrorResponse "Invalid table ID"
+// @Failure      404  {object}  response.ErrorResponse "Table not found"
+// @Failure      500  {object}  response.ErrorResponse "Internal server error"
+// @Router       /api/tables/{id} [get]
 func (h *TableHandler) GetTableByID(c *gin.Context) {
 	//get Param
 	ParamId := c.Param("id")
@@ -78,6 +98,18 @@ func (h *TableHandler) GetTableByID(c *gin.Context) {
 	})
 }
 
+
+// CreateTable godoc
+// @Summary      Create a new table
+// @Description  Create a new table with the provided details
+// @Tags         tables
+// @Accept       json
+// @Produce      json
+// @Param        input  body      dto.CreateTableRequest  true  "Table creation details"
+// @Success      201    {object}  map[string]interface{}  "Table created successfully"
+// @Failure      400    {object}  response.ErrorResponse  "Invalid request body or validation failed"
+// @Failure      500    {object}  response.ErrorResponse  "Internal server error"
+// @Router       /api/tables [post]
 func (h *TableHandler) CreateTable(c *gin.Context) {
 	var req dto.CreateTableRequest
 
@@ -118,8 +150,18 @@ func (h *TableHandler) CreateTable(c *gin.Context) {
 	})
 }
 
-// Update Table
-
+// UpdateTable godoc
+// @Summary      Update a table by ID
+// @Description  Update a table's information based on its ID
+// @Tags         tables
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int                    true  "Table ID"
+// @Param        input  body      dto.UpdateTableRequest  true  "Updated table details"
+// @Success      200    {object}  map[string]string      "Table updated successfully"
+// @Failure      400    {object}  response.ErrorResponse "Invalid request body or validation failed"
+// @Failure      500    {object}  response.ErrorResponse "Internal server error"
+// @Router       /api/tables/{id} [put]
 func (h *TableHandler) UpdateTable(c *gin.Context) {
 	// Ambil ID dari paramater
 	paramID := c.Param("id")
@@ -163,7 +205,17 @@ func (h *TableHandler) UpdateTable(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message" : "Table update successfully"})
 }
 
-// delete Table
+// DeleteTable godoc
+// @Summary      Delete a table by ID
+// @Description  Delete a table based on the provided table ID
+// @Tags         tables
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Table ID"
+// @Success      200  {object}  map[string]string "Table deleted successfully"
+// @Failure      400  {object}  response.ErrorResponse "Invalid table ID"
+// @Failure      500  {object}  response.ErrorResponse "Internal server error"
+// @Router       /api/tables/{id} [delete]
 func (h *TableHandler) DeleteTable(c *gin.Context) {
 	// Ambil id 
 	ParamID := c.Param("id")
@@ -181,6 +233,17 @@ func (h *TableHandler) DeleteTable(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message" : "Table deleted successfully"})
 }
 
+// GetTableByStatus godoc
+// @Summary      Get tables by status
+// @Description  Retrieve a list of tables filtered by their status
+// @Tags         tables
+// @Accept       json
+// @Produce      json
+// @Param        status  query    string               true  "Table status (e.g., available, reserved, occupied)"
+// @Success      200     {array}  response.TableResponse "List of tables retrieved successfully"
+// @Failure      400     {object} response.ErrorResponse "Invalid status parameter"
+// @Failure      500     {object} response.ErrorResponse "Internal server error"
+// @Router       /api/tables/status [get]
 func (h *TableHandler) GetTableByStatus(c *gin.Context) {
 	status := c.Query("status")
 	if status == "" {

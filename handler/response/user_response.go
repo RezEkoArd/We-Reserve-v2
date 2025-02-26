@@ -18,3 +18,7 @@ type ListUserResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type ErrorResponse struct {
+    Error string `json:"error"`
+}

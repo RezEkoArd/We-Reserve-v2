@@ -24,6 +24,17 @@ func NewReservationsHandler(reservationService *services.ReservationService) *Re
 	}
 }
 
+
+// GetAllReservation godoc
+// @Summary      Get all reservations
+// @Description  Retrieve a list of all reservations
+// @Tags         reservations
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}   response.ReservationResponse "List of reservations retrieved successfully"
+// @Failure      404  {object}  response.ErrorResponse       "No reservations found"
+// @Failure      500  {object}  response.ErrorResponse       "Internal server error"
+// @Router       /api/reservation [get]
 func (h *ReservationHandler) GetAllReservation(c *gin.Context) {
 	reservations, err := h.ReservationService.GetAllReservation()
 	if err != nil {
@@ -72,6 +83,19 @@ func (h *ReservationHandler) GetAllReservation(c *gin.Context) {
 	})
 }
 
+
+// GetReservationDetail godoc
+// @Summary      Get a reservation by ID
+// @Description  Retrieve a reservation's details based on its ID
+// @Tags         reservations
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int                      true  "Reservation ID"
+// @Success      200  {object}  response.ReservationResponse "Reservation retrieved successfully"
+// @Failure      400  {object}  response.ErrorResponse       "Invalid reservation ID"
+// @Failure      404  {object}  response.ErrorResponse       "Reservation not found"
+// @Failure      500  {object}  response.ErrorResponse       "Internal server error"
+// @Router       /api/reservation/{id} [get]
 func (h *ReservationHandler) GetReservationDetail(c *gin.Context) {
 	// get Param
 	ParamId := c.Param("id")
@@ -114,6 +138,18 @@ func (h *ReservationHandler) GetReservationDetail(c *gin.Context) {
 	})
 }
 
+
+// GetReservationByUserLogin godoc
+// @Summary      Get reservations by logged-in user
+// @Description  Retrieve a list of reservations made by the currently logged-in user
+// @Tags         reservations
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}   response.ReservationResponse "List of reservations retrieved successfully"
+// @Failure      400  {object}  response.ErrorResponse       "Invalid user ID or failed to retrieve data"
+// @Failure      401  {object}  response.ErrorResponse       "Unauthorized, user ID not found in context"
+// @Failure      500  {object}  response.ErrorResponse       "Internal server error"
+// @Router       /api/reservation/my-reservation [get]
 func (h *ReservationHandler) GetReservationByUserLogin(c *gin.Context) {
 	// Get id user login now
 	userIDInterface, exists :=  c.Get("userID")	
@@ -180,7 +216,17 @@ func (h *ReservationHandler) GetReservationByUserLogin(c *gin.Context) {
 
 
 
-// Delete Reservation
+// DeleteReservation godoc
+// @Summary      Delete a reservation by ID
+// @Description  Delete a reservation based on the provided reservation ID
+// @Tags         reservations
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int                  true  "Reservation ID"
+// @Success      200  {object}  map[string]string    "Reservation deleted successfully"
+// @Failure      400  {object}  response.ErrorResponse "Invalid reservation ID"
+// @Failure      500  {object}  response.ErrorResponse "Internal server error"
+// @Router       /api/reservation/{id} [delete]
 func (h *ReservationHandler) DeleteReservation(c *gin.Context) {
 	paramID := c.Param("id")
 	id, err := strconv.Atoi(paramID)
@@ -198,8 +244,18 @@ func (h *ReservationHandler) DeleteReservation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message" : "Reservation deleted Successfully" })
 }
 
-//Create 
-
+// CreateReservation godoc
+// @Summary      Create a new reservation
+// @Description  Create a new reservation with the provided details
+// @Tags         reservations
+// @Accept       json
+// @Produce      json
+// @Param        input  body      dto.Reservation          true  "Reservation creation details"
+// @Success      201    {object}  response.ReservationResponse "Reservation created successfully"
+// @Failure      400    {object}  response.ErrorResponse       "Invalid request body or validation failed"
+// @Failure      409    {object}  response.ErrorResponse       "Table already reserved"
+// @Failure      500    {object}  response.ErrorResponse       "Internal server error"
+// @Router       /api/reservation [post]
 func (h *ReservationHandler) CreateReservation(c *gin.Context) {
 	// var reservation models.Reservation
 	var reservationDTO dto.Reservation
@@ -279,6 +335,20 @@ func (h *ReservationHandler) CreateReservation(c *gin.Context) {
 	})
 }
 
+
+// UpdateReservation godoc
+// @Summary      Update a reservation by ID
+// @Description  Update a reservation's details based on its ID
+// @Tags         reservations
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int                      true  "Reservation ID"
+// @Param        input  body      dto.UpdateReservation    true  "Updated reservation details"
+// @Success      200    {object}  map[string]string        "Reservation updated successfully"
+// @Failure      400    {object}  response.ErrorResponse   "Invalid request body or validation failed"
+// @Failure      409    {object}  response.ErrorResponse   "Table and reservation time already used by another reservation"
+// @Failure      500    {object}  response.ErrorResponse   "Internal server error"
+// @Router       /api/reservation/{id} [put]
 func (h *ReservationHandler) UpdateReservation(c *gin.Context) {
 	paramID := c.Param("id")
 	id, err := strconv.Atoi(paramID)

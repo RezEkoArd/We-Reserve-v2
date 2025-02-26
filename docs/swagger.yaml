@@ -1,0 +1,763 @@
+basePath: /api
+definitions:
+  dto.CreateTableRequest:
+    properties:
+      capacity:
+        maximum: 20
+        minimum: 1
+        type: integer
+      status:
+        enum:
+        - available
+        - reserved
+        - occupied
+        type: string
+      table_name:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - capacity
+    - status
+    - table_name
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 20
+        minLength: 3
+        type: string
+      password:
+        minLength: 8
+        type: string
+      role:
+        enum:
+        - admin
+        - customer
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  dto.Reservation:
+    properties:
+      number_of_people:
+        minimum: 1
+        type: integer
+      reservation_datetime:
+        type: string
+      table_id:
+        type: integer
+      user_id:
+        type: integer
+    required:
+    - number_of_people
+    - reservation_datetime
+    - table_id
+    - user_id
+    type: object
+  dto.UpdateReservation:
+    properties:
+      number_of_people:
+        minimum: 1
+        type: integer
+      reservation_datetime:
+        type: string
+      table_id:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  dto.UpdateTableRequest:
+    properties:
+      capacity:
+        maximum: 20
+        minimum: 1
+        type: integer
+      status:
+        enum:
+        - available
+        - reserved
+        - occupied
+        type: string
+      table_name:
+        maxLength: 50
+        minLength: 3
+        type: string
+    type: object
+  dto.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 20
+        minLength: 3
+        type: string
+      password:
+        minLength: 8
+        type: string
+    type: object
+  response.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  response.ListUserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  response.ReservationResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      number_of_people:
+        type: integer
+      reservation_datetime:
+        type: string
+      table:
+        allOf:
+        - $ref: '#/definitions/response.TableResponse'
+        description: Preloaded Table data
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/response.UserPreloadResponse'
+        description: Preloaded User data
+    type: object
+  response.TableResponse:
+    properties:
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: integer
+      status:
+        type: string
+      table_name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  response.UserPreloadResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  response.UserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+info:
+  contact:
+    name: RezkyEkoArd.
+    url: https://github.com/rezekoard
+  description: |-
+    API untuk mengelola reservasi meja makan yang berada di restaurant
+    Author: Rezekoard
+  title: We Reserve
+  version: "1.0"
+paths:
+  /api/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user with email and password
+      parameters:
+      - description: User login details
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful, returns JWT token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized, invalid credentials
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Login a user
+      tags:
+      - users
+  /api/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with email and password
+      parameters:
+      - description: User registration details
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/response.UserResponse'
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - users
+  /api/reservation:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all reservations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of reservations retrieved successfully
+          schema:
+            items:
+              $ref: '#/definitions/response.ReservationResponse'
+            type: array
+        "404":
+          description: No reservations found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get all reservations
+      tags:
+      - reservations
+    post:
+      consumes:
+      - application/json
+      description: Create a new reservation with the provided details
+      parameters:
+      - description: Reservation creation details
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.Reservation'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Reservation created successfully
+          schema:
+            $ref: '#/definitions/response.ReservationResponse'
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Table already reserved
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create a new reservation
+      tags:
+      - reservations
+  /api/reservation/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a reservation based on the provided reservation ID
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Reservation deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid reservation ID
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete a reservation by ID
+      tags:
+      - reservations
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a reservation's details based on its ID
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Reservation retrieved successfully
+          schema:
+            $ref: '#/definitions/response.ReservationResponse'
+        "400":
+          description: Invalid reservation ID
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Reservation not found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get a reservation by ID
+      tags:
+      - reservations
+    put:
+      consumes:
+      - application/json
+      description: Update a reservation's details based on its ID
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated reservation details
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateReservation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Reservation updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Table and reservation time already used by another reservation
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Update a reservation by ID
+      tags:
+      - reservations
+  /api/reservation/my-reservation:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of reservations made by the currently logged-in
+        user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of reservations retrieved successfully
+          schema:
+            items:
+              $ref: '#/definitions/response.ReservationResponse'
+            type: array
+        "400":
+          description: Invalid user ID or failed to retrieve data
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized, user ID not found in context
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get reservations by logged-in user
+      tags:
+      - reservations
+  /api/tables:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all tables
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of tables retrieved successfully
+          schema:
+            items:
+              $ref: '#/definitions/response.TableResponse'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get all tables
+      tags:
+      - tables
+    post:
+      consumes:
+      - application/json
+      description: Create a new table with the provided details
+      parameters:
+      - description: Table creation details
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateTableRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Table created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create a new table
+      tags:
+      - tables
+  /api/tables/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a table based on the provided table ID
+      parameters:
+      - description: Table ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Table deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid table ID
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete a table by ID
+      tags:
+      - tables
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a table's information based on its ID
+      parameters:
+      - description: Table ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Table retrieved successfully
+          schema:
+            $ref: '#/definitions/response.TableResponse'
+        "400":
+          description: Invalid table ID
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Table not found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get a table by ID
+      tags:
+      - tables
+    put:
+      consumes:
+      - application/json
+      description: Update a table's information based on its ID
+      parameters:
+      - description: Table ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated table details
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateTableRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Table updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Update a table by ID
+      tags:
+      - tables
+  /api/tables/status:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of tables filtered by their status
+      parameters:
+      - description: Table status (e.g., available, reserved, occupied)
+        in: query
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of tables retrieved successfully
+          schema:
+            items:
+              $ref: '#/definitions/response.TableResponse'
+            type: array
+        "400":
+          description: Invalid status parameter
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get tables by status
+      tags:
+      - tables
+  /api/users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users retrieved successfully
+          schema:
+            items:
+              $ref: '#/definitions/response.ListUserResponse'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get all users
+      tags:
+      - users
+  /api/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user based on the provided user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete a user by ID
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a user's information based on their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User retrieved successfully
+          schema:
+            $ref: '#/definitions/response.UserResponse'
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get a user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update a user's information based on their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated user details
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Update a user by ID
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

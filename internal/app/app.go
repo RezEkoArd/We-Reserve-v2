@@ -1,15 +1,37 @@
 package app
 
 import (
+	"time"
 	"wereserve/config"
 	"wereserve/handler"
 	"wereserve/middleware"
 	"wereserve/repository"
 	"wereserve/services"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+
+	// Swagger
+	_ "wereserve/docs"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+//	@title			We Reserve
+//	@version		1.0
+//	@description	API untuk mengelola reservasi meja makan yang berada di restaurant
+//	@description	Author: Rezekoard
+//	@contact.name	RezkyEkoArd.
+//	@contact.url	https://github.com/rezekoard
+
+//	@host
+//	@BasePath					/api
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@security					BearerAuth
 
 
 func RunServer() {
@@ -38,6 +60,20 @@ func RunServer() {
 
 	// Setup gin router
 	r := gin.Default()
+
+	//cors Config
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins: false,
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
+		ExposeHeaders: []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge: 12 * time.Hour,
+	}))
+
+	// route Swagger
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Public routes(tanpa middleware JWT)
 	public := r.Group("/api")
