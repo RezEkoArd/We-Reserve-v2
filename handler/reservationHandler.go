@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"wereserve/dto"
 	"wereserve/handler/response"
@@ -260,79 +262,102 @@ func (h *ReservationHandler) CreateReservation(c *gin.Context) {
 	// var reservation models.Reservation
 	var reservationDTO dto.Reservation
 
-	//bind dan validasi request body
-	if err := c.ShouldBindJSON(&reservationDTO); err != nil{
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+    // Bind dan validasi request body
+    if err := c.ShouldBindJSON(&reservationDTO); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+        return
+    }
 
-	// validasi format
-	if _, err := time.Parse(time.RFC3339, reservationDTO.ReservationDateTime.Format(time.RFC3339)); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error" : "invalid reservation date format"})
-		return
-	}
+    // Validasi format waktu
+    if _, err := time.Parse(time.RFC3339, reservationDTO.ReservationDateTime.Format(time.RFC3339)); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reservation date format. Expected RFC3339 format."})
+        return
+    }
 
-	// validate request
-	if err := h.validate.Struct(reservationDTO); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error" : err.Error()})
-		return
-	}
+    // Validasi request menggunakan validator
+    if err := h.validate.Struct(reservationDTO); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed: " + err.Error()})
+        return
+    }
 
-	// Convert DTO To model
-	reservationModel := models.Reservation{
-		UserID: 		reservationDTO.UserID,
-		TableID:            reservationDTO.TableID,
+    // Convert DTO ke model
+    reservationModel := models.Reservation{
+        UserID:             reservationDTO.UserID,
+        TableID:            reservationDTO.TableID,
         ReservationDateTime: reservationDTO.ReservationDateTime,
         NumberOfPeople:     reservationDTO.NumberOfPeople,
         CreatedAt:          time.Now(),
         UpdatedAt:          time.Now(),
-	}
+    }
 
-	// Panggil service untuk membuat reservasi
-	if err :=  h.ReservationService.CreateReservation(&reservationModel); err != nil {
-		// handle error
-		switch err.Error() {
-		case "meja sudah di pesan" :
-			c.JSON(http.StatusBadRequest, gin.H{"error" : err.Error()})
-		default :
-			c.JSON(http.StatusInternalServerError, gin.H{"error" : "failed to create reservation"})
-		}
+	//Get email userLogin
+	emailInterface, exists :=  c.Get("email")	
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error" : "email tidak ditemukan di claims",
+		})
 		return
 	}
 
-	createReservation, err := h.ReservationService.GetReservationDetail(reservationModel.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error" : "failed to create reservation"})
+	// Parse claims email to string
+	userEmail, ok := emailInterface.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error" : "Gagal konversi userEmail ke string",
+		})
 		return
 	}
 
-	// format resp
-	resp := response.ReservationResponse{
-		ID:                  createReservation.ID,
-		User:                response.UserPreloadResponse{
-							ID:    createReservation.UserID,
-							Name:  createReservation.User.Name,
-							Email: createReservation.User.Email,
-		},
-		Table:               response.TableResponse{
-							ID:        createReservation.TableID,
-							TableName: createReservation.Table.TableName,
-							Capacity:  createReservation.Table.Capacity,
-							Status:    createReservation.Table.Status,
-							CreatedAt: createReservation.Table.CreatedAt,
-							UpdatedAt: createReservation.Table.UpdatedAt,
-		},
-		ReservationDateTime: createReservation.ReservationDateTime,
-		NumberOfPeople:      createReservation.NumberOfPeople,
-		CreatedAt:           createReservation.CreatedAt,
-		UpdatedAt:           createReservation.UpdatedAt,
-	}
 
+    // Panggil service untuk membuat reservasi
+    if err := h.ReservationService.CreateReservation(&reservationModel, userEmail ); err != nil {
+        switch {
+        case strings.Contains(err.Error(), "already reserved"):
+            c.JSON(http.StatusBadRequest, gin.H{"error": "Table is already reserved"})
+        case strings.Contains(err.Error(), "failed to fetch table"):
+            c.JSON(http.StatusNotFound, gin.H{"error": "Table not found"})
+        default:
+            log.Printf("Error creating reservation: %v", err)
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create reservation"})
+        }
+        return
+    }
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message" : "Reservation created successfully",
-		"data" : resp,
-	})
+    // Ambil detail reservasi yang baru dibuat
+    createReservation, err := h.ReservationService.GetReservationDetail(reservationModel.ID)
+    if err != nil {
+        log.Printf("Error fetching reservation detail: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reservation detail"})
+        return
+    }
+
+    // Format response
+    resp := response.ReservationResponse{
+        ID: createReservation.ID,
+        User: response.UserPreloadResponse{
+            ID:    createReservation.UserID,
+            Name:  createReservation.User.Name,
+            Email: createReservation.User.Email,
+        },
+        Table: response.TableResponse{
+            ID:        createReservation.TableID,
+            TableName: createReservation.Table.TableName,
+            Capacity:  createReservation.Table.Capacity,
+            Status:    createReservation.Table.Status,
+            CreatedAt: createReservation.Table.CreatedAt,
+            UpdatedAt: createReservation.Table.UpdatedAt,
+        },
+        ReservationDateTime: createReservation.ReservationDateTime,
+        NumberOfPeople:      createReservation.NumberOfPeople,
+        CreatedAt:           createReservation.CreatedAt,
+        UpdatedAt:           createReservation.UpdatedAt,
+    }
+
+    // Kirim response sukses
+    c.JSON(http.StatusCreated, gin.H{
+        "message": "Reservation created successfully",
+        "data":    resp,
+    })
 }
 
 

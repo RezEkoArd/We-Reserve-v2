@@ -3,8 +3,10 @@ package services
 import (
 	"errors"
 	"fmt"
+	"log"
 	"wereserve/models"
 	"wereserve/repository"
+	"wereserve/utils"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -62,33 +64,43 @@ func (s *ReservationService) GetReservationByUserLogin(userID int) ([]models.Res
 	return reservations, nil
 }
 
-func (s *ReservationService) CreateReservation(reservation *models.Reservation) error {
+func (s *ReservationService) CreateReservation(reservation *models.Reservation, emailUser string) error {
 	
 // Validasi input menggunakan Validator
 	if err := s.Validator.Struct(reservation); err != nil {
+		log.Printf("Validation error : %v", err)
 		return fmt.Errorf("invalid reservation data: %w", err)
 	}
 
 	// Cek apakah meja tersedia
 	table, err := s.tableRepo.GetTableByID(reservation.TableID)
 	if err != nil {
+		log.Printf("Failed to fetch table with ID %d: %v", reservation.TableID, err)
 		return fmt.Errorf("failed to fetch table with ID %d: %w", reservation.TableID, err)
 	}
+	
 	if table.Status == "reserved" {
+		log.Printf("Table with ID %d is already reserved", reservation.TableID)
 		return fmt.Errorf("table with ID %d is already reserved", reservation.TableID)
 	}
 
 	// Buat reservasi
 	if err := s.reservationRepo.CreateReservation(reservation); err != nil {
+		log.Printf("Failed to create reservation for table ID %d: %v", reservation.TableID, err)
 		return fmt.Errorf("failed to create reservation for table ID %d: %w", reservation.TableID, err)
 	}
 
 	// Update status meja menjadi "reserved"
 	table.Status = "reserved"
 	if err := s.tableRepo.UpdateTable(reservation.TableID, table); err != nil {
+		log.Printf("Failed to update status for table ID %d: %v", reservation.TableID, err)
 		return fmt.Errorf("failed to update status for table ID %d: %w", reservation.TableID, err)
 	}
-	
+
+	err = utils.SendEmail( emailUser, table.TableName, reservation.ReservationDateTime.Format("2006-01-02 15:04"))
+	if err != nil {
+		log.Printf("Failed to send Email Confirmation")
+	}
 
 	return nil
 }

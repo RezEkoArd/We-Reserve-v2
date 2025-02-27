@@ -80,6 +80,9 @@ func RunServer() {
 	{
 		public.POST("/register", userHandler.Register)
 		public.POST("/login", userHandler.Login)
+		public.GET("/users", userHandler.GetAllUser)
+		public.GET("/tables",tableHandler.GetListTable)
+
 	}
 	
 	//Endpoint yang memerlukan authentication dan role tertentu
@@ -88,7 +91,6 @@ func RunServer() {
 	{
 		// Contoh menggunakan jwt admin 
 		api.DELETE("/users/:id", middleware.RoleCheck("admin"), userHandler.DeleteUser)
-		api.GET("/users", middleware.RoleCheck("customer","admin"), userHandler.GetAllUser)
 		api.GET("/users/:id", middleware.RoleCheck("customer","admin"), userHandler.GetUserById)
 		api.PUT("/users/:id", middleware.RoleCheck("customer","admin"), userHandler.UpdateUser)
 
@@ -102,7 +104,7 @@ func RunServer() {
 		api.GET("/reservation", middleware.RoleCheck("admin"), reservationHandler.GetAllReservation)
 		api.GET("/reservation/:id", middleware.RoleCheck("customer", "admin"),reservationHandler.GetReservationDetail)
 		api.GET("/reservation/my-reservation", middleware.RoleCheck("customer", "admin"),reservationHandler.GetReservationByUserLogin)
-		api.POST("/reservation", middleware.RoleCheck("admin"),reservationHandler.CreateReservation)
+		api.POST("/reservation", middleware.RoleCheck("customer","admin"),reservationHandler.CreateReservation)
 		api.PUT("/reservation/:id", middleware.RoleCheck("admin"),reservationHandler.UpdateReservation)
 		api.DELETE("/reservation/:id", middleware.RoleCheck("admin"),reservationHandler.DeleteReservation)
 	}
